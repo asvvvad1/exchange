@@ -260,8 +260,15 @@ func (exchange *Exchange) apiSymbols() (map[string]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := resp["symbols"]
-	return result.(map[string]map[string]string), nil
+	result := make(map[string]map[string]string)
+	for code, data := range resp["symbols"].(map[string]interface{}) {
+		values := make(map[string]string)
+		for name, value := range data.(map[string]interface{}) {
+			values[name] = value.(string)
+		}
+		result[code] = values
+	}
+	return result, nil
 }
 
 func (exchange *Exchange) apiLatest(q query) (map[string]*big.Float, error) {
