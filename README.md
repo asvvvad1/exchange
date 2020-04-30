@@ -68,11 +68,11 @@ func main() {
 
 ### Results returned by each method:
 - ConvertTo, ConvertAt, HistoricalRatesSingle, LatestRatesSingle
-- - `big.Float`
+- - `big.Float`, error
 - LatestRatesAll, LatestRatesMultiple, HistoricalRatesAll, HistoricalRatesMultiple:
 - - `map[symbol(string)]rate(big.Float)`
 - Symbols
-- - `[]string{symbols}`
+- - `[]string{symbols}`, error
 - SymbolsData
 - - `map[symbol]map[
     code
@@ -80,26 +80,26 @@ func main() {
     symbol
     dec
     hex
-]string`
+]string`, error
 - FluctuationAll, FluctuationMultiple,
 - - `map[symbol]map[
     start_rate
     end_rate
     change
     change_pct
-]*big.Float`
+]*big.Float`, error
 - FluctuationSingle
 - - `map[
     start_rate
     end_rate
     change
     change_pct
-]*big.Float`
+]*big.Float`, error
 
-- TimeseriesAll, TimeseriesMultiple,
-- - `map[date]map[symbols]*big.Float`
+- TimeseriesAll, TimeseriesMultiple
+- - `map[date]map[symbols]*big.Float`, error
 - TimeseriesSingle
-- - `map[date]map[symbol]*big.Float`
+- - `map[date]map[symbol]*big.Float`, error
 
 > ## Notes:
 
