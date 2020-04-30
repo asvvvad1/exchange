@@ -8,6 +8,8 @@ Go library for current and historical exchange rates and currency conversion usi
 
 ## Usage:
 
+> #### `go get -u github.com/asvvvad/exchange` 
+
 ```go
 package main
 
@@ -63,7 +65,7 @@ func main() {
 
 ```
 
-### Results returned by each function:
+### Results returned by each method:
 - ConvertTo, ConvertAt, HistoricalRatesSingle, LatestRatesSingle
 - - `big.Float`
 - LatestRatesAll, LatestRatesMultiple, HistoricalRatesAll, HistoricalRatesMultiple:
