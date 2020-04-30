@@ -95,13 +95,6 @@ func cacheDuration() time.Duration {
 	return timeTillMidnight
 }
 
-// CacheResponse caches a response to return it in further calls and prevent api calls
-func (exchange *Exchange) CacheResponse(key string, value interface{}) {
-	if exchange.CacheEnabled {
-		cache.Set(key, value, gocache.DefaultExpiration)
-	}
-}
-
 // ValidateCode validates a single symbol code
 func ValidateCode(code string) error {
 	if len(code) != 3 {
