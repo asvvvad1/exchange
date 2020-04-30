@@ -4,6 +4,7 @@ Go library for current and historical exchange rates and currency conversion usi
 ## Features:
 - Currency conversion, historical & current exchange rates, timeseries and fluctuations
 - No authentication/token needed
+- Select any base currency
 - Caching (optional, default) using [go-cache](https://github.com/patrickmn/go-cache)
 - Easy to use:
 
