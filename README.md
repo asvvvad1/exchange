@@ -2,7 +2,7 @@
 Go library for current and historical exchange rates and currency conversion using the new [Free foreign exchange rates API](https://exchangerate.host/#/) by [arzzen](https://github.com/arzzen/) ([github](https://github.com/arzzen/exchangerate.host))
 
 ## Features:
-- Currency convertion, historical & current exchange rates, timeseries and fluctuations
+- Currency conversion, historical & current exchange rates, timeseries and fluctuations
 - No authentication/token needed
 - Caching (optional, default) using [go-cache](https://github.com/patrickmn/go-cache)
 - Easy to use:
