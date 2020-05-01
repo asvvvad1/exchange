@@ -1,4 +1,6 @@
 # exchange
+[![Go Report Card](https://goreportcard.com/badge/github.com/asvvvad/exchange)](https://goreportcard.com/report/github.com/asvvvad/exchange)
+
 Go library for current and historical exchange rates and currency conversion using the new [Free foreign exchange rates API](https://exchangerate.host/#/) by [arzzen](https://github.com/arzzen/) ([github](https://github.com/arzzen/exchangerate.host))
 
 ## Features:
