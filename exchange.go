@@ -114,7 +114,7 @@ func ValidateSymbols(symbols []string) error {
 	return nil
 }
 
-// ValidateDate validates date string acording to YYYY-MM-DD format and if it's
+// ValidateDate validates date string according to YYYY-MM-DD format and if it's
 func ValidateDate(date string) error {
 	matched, err := regexp.Match("[0-9]{4,4}-((0[1-9])|(1[0-2]))-([0-3]{1}[0-9]{1})", []byte(date))
 	if err != nil {
