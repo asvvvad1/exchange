@@ -1,12 +1,13 @@
 # exchange
 [![Go Report Card](https://goreportcard.com/badge/github.com/asvvvad/exchange)](https://goreportcard.com/report/github.com/asvvvad/exchange)
 
-Go library for current and historical exchange rates and currency conversion using the new [Free foreign exchange rates API](https://exchangerate.host/#/) by [arzzen](https://github.com/arzzen/) ([github](https://github.com/arzzen/exchangerate.host))
+Go library for current & historical exchange rates, forex & crypto currency conversion, fluctuation, and timeseries using the new [Free foreign exchange rates API](https://exchangerate.host/#/) by [arzzen](https://github.com/arzzen/) ([github](https://github.com/arzzen/exchangerate.host))
 
 ## Features:
 - Currency conversion, historical & current exchange rates, timeseries and fluctuations
 - No authentication/token needed
 - Select any base currency
+- 171 forex currency and 6000+ cryptocurrency!
 - Caching (optional, default) using [go-cache](https://github.com/patrickmn/go-cache)
 - Easy to use:
 
