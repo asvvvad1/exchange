@@ -338,7 +338,7 @@ func (exchange *Exchange) apiTimeseriesAndFuctuation(url string, q query) (map[s
 	return result, nil
 }
 
-// ForexCode returns and array of supported forex/fiat currency codes
+// ForexCodes returns and array of supported forex/fiat currency codes
 func (exchange *Exchange) ForexCodes() ([]string, error) {
 	var codes []string
 
