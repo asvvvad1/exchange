@@ -33,13 +33,14 @@ var ErrInvalidTimeFrame = errors.New("From date must be older than To date")
 var ErrInvalidAPIResponse = errors.New("Unknown API error")
 
 const (
-	baseURL        string = "https://api.exchangerate.host"
-	symbolsURL     string = baseURL + "/symbols"
-	latestURL      string = baseURL + "/latest"
-	convertURL     string = baseURL + "/convert"
-	historicalURL  string = baseURL + "/"
-	timeseriesURL  string = baseURL + "/timeseries"
-	fluctuationURL string = baseURL + "/fluctuation"
+	baseURL             string = "https://api.exchangerate.host"
+	symbolsURL          string = baseURL + "/symbols"
+	cryptocurrenciesURL string = baseURL + "/cryptocurrencies"
+	latestURL           string = baseURL + "/latest"
+	convertURL          string = baseURL + "/convert"
+	historicalURL       string = baseURL + "/"
+	timeseriesURL       string = baseURL + "/timeseries"
+	fluctuationURL      string = baseURL + "/fluctuation"
 )
 
 // Exchange is returned by New() and allows access to the methods
@@ -264,6 +265,22 @@ func (exchange *Exchange) apiSymbols() (map[string]map[string]string, error) {
 	return result, nil
 }
 
+func (exchange *Exchange) apiCryptocurrencies() (map[string]map[string]string, error) {
+	resp, err := exchange.get(cryptocurrenciesURL, query{})
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]map[string]string)
+	for code, data := range resp["cryptocurrencies"].(map[string]interface{}) {
+		values := make(map[string]string)
+		for name, value := range data.(map[string]interface{}) {
+			values[name] = value.(string)
+		}
+		result[code] = values
+	}
+	return result, nil
+}
+
 func (exchange *Exchange) apiLatest(q query) (map[string]*big.Float, error) {
 	resp, err := exchange.get(latestURL, q)
 	if err != nil {
@@ -321,8 +338,8 @@ func (exchange *Exchange) apiTimeseriesAndFuctuation(url string, q query) (map[s
 	return result, nil
 }
 
-// Symbols returns and array of currency codes
-func (exchange *Exchange) Symbols() ([]string, error) {
+// Forex returns and array of supported forex/fiat currency codes
+func (exchange *Exchange) ForexCodes() ([]string, error) {
 	var codes []string
 
 	result, err := exchange.apiSymbols()
@@ -338,9 +355,31 @@ func (exchange *Exchange) Symbols() ([]string, error) {
 	return codes, nil
 }
 
-// SymbolsData returns a map of symbols data
-func (exchange *Exchange) SymbolsData() (map[string]map[string]string, error) {
+// ForexData returns a map of supported forex/fiat currencies data (code & description)
+func (exchange *Exchange) ForexData() (map[string]map[string]string, error) {
 	return exchange.apiSymbols()
+}
+
+// CryptoCodes returns and array of supported cryptocurrency codes
+func (exchange *Exchange) CryptoCodes() ([]string, error) {
+	var codes []string
+
+	result, err := exchange.apiCryptocurrencies()
+	if err != nil {
+		return nil, err
+	}
+
+	for k := range result {
+		codes = append(codes, k)
+	}
+
+	sort.Strings(codes)
+	return codes, nil
+}
+
+// CryptoData returns a map of supported cryptocurrencies data (name and symbol)
+func (exchange *Exchange) CryptoData() (map[string]map[string]string, error) {
+	return exchange.apiCryptocurrencies()
 }
 
 // LatestRatesAll returns the latest exchange rates for all supportedcurrencies
