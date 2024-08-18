@@ -1,13 +1,30 @@
-package exchange
+package exchange_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
+
+	"github.com/asvvvad/exchange"
 )
 
 func TestExchange(t *testing.T) {
+	ex := exchange.New("USD")
+	f, err := ex.ConvertTo("EUR", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f == nil {
+		t.Fatal("nil value")
+	}
+}
+
+func ExampleExchange() {
+	// Set exchangerate.host ACCESS_KEY - either this way or via the EXCHANGERATE_ACCESS_KEY environment variable
+	exchange.Client.AccessKey = os.Getenv("EXCHANGERATE_ACCESS_KEY")
+
 	// Create a new Exchange instance and set USD as the base currency for the exchange rates and conversion
-	ex := New("USD")
+	ex := exchange.New("USD")
 	// convert 10 USD to EUR
 	fmt.Println(ex.ConvertTo("EUR", 10))
 

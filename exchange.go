@@ -3,9 +3,11 @@ package exchange
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"math/big"
 	"net/http"
-	"regexp"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -60,8 +62,18 @@ type query struct {
 	TimeFrame [2]string
 }
 
-var client http.Client = http.Client{}
-var cache *gocache.Cache
+// Client holds the one global HTTP client and the cache.
+//
+// You should set the AccessKey to your exchangerate.host access key.
+var Client = struct {
+	*http.Client
+	*gocache.Cache
+	AccessKey string
+}{
+	Client:    http.DefaultClient,
+	Cache:     gocache.New(cacheDuration(), 5*time.Minute),
+	AccessKey: os.Getenv("EXCHANGERATE_ACCESS_KEY"),
+}
 
 // New creates a new instance of Exchange
 func New(base string) *Exchange {
@@ -70,7 +82,6 @@ func New(base string) *Exchange {
 		CacheEnabled:  true,
 		isInitialized: true,
 	}
-	cache = gocache.New(cacheDuration(), 5*time.Minute)
 	return x
 }
 
@@ -84,16 +95,15 @@ func (exchange *Exchange) SetBase(base string) error {
 }
 
 // SetCache enables and disable caching (caching last till midnight when the exchange rates are updated)
-func (exchange *Exchange) SetCache(cache bool) {
-	exchange.CacheEnabled = cache
+func (exchange *Exchange) SetCache(enabled bool) {
+	exchange.CacheEnabled = enabled
 }
 
+// cacheDuration returns the cache duration - time till mignight.
 func cacheDuration() time.Duration {
 	now := time.Now().UTC()
-	t := now.Add(time.Hour * 24)
-	midnight := time.Date(t.Year(), t.Month(), t.Day(), 0, 5, 0, 0, time.UTC)
-	timeTillMidnight := midnight.Sub(now)
-	return timeTillMidnight
+	midnight := now.AddDate(0, 0, 1).Truncate(24 * time.Hour)
+	return midnight.Sub(now)
 }
 
 // ValidateCode validates a single symbol code
@@ -115,17 +125,25 @@ func ValidateSymbols(symbols []string) error {
 	return nil
 }
 
+func parseDate(s string) (time.Time, error) {
+	const dateFormat = "2006-01-02"
+	t, err := time.Parse(dateFormat, s)
+	if err != nil {
+		err = fmt.Errorf("%w: parse %q as "+dateFormat+": %w", ErrInvalidDateFormat, s, err)
+	}
+	return t, err
+}
+
 // ValidateDate validates date string according to YYYY-MM-DD format and if it's
 func ValidateDate(date string) error {
-	matched, err := regexp.Match("[0-9]{4,4}-((0[1-9])|(1[0-2]))-([0-3]{1}[0-9]{1})", []byte(date))
+	oldestDate, err := parseDate("1999-01-03")
+	if err != nil { // programmer error
+		panic(err)
+	}
+	selectedDate, err := parseDate(date)
 	if err != nil {
 		return err
 	}
-	if !matched {
-		return ErrInvalidDateFormat
-	}
-	oldestDate, _ := time.Parse("2006-01-02", "1999-01-03")
-	selectedDate, _ := time.Parse("2006-01-02", date)
 	if selectedDate.Before(oldestDate) {
 		return ErrInvalidDate
 	}
@@ -134,8 +152,14 @@ func ValidateDate(date string) error {
 
 // ValidateTimeFrame checks if the from and to date are not more than 365 days apart and they're not mixed
 func ValidateTimeFrame(TimeFrame [2]string) error {
-	from, _ := time.Parse("2006-01-02", TimeFrame[0])
-	to, _ := time.Parse("2006-01-02", TimeFrame[1])
+	from, err := parseDate(TimeFrame[0])
+	if err != nil {
+		return err
+	}
+	to, err := parseDate(TimeFrame[1])
+	if err != nil {
+		return err
+	}
 	if to.Before(from) {
 		return ErrInvalidTimeFrame
 	}
@@ -158,12 +182,12 @@ func (exchange *Exchange) get(url string, q query) (map[string]interface{}, erro
 	cacheKey := req.URL.String()
 
 	if exchange.CacheEnabled {
-		if response, ok := cache.Get(cacheKey); ok == true {
+		if response, ok := Client.Cache.Get(cacheKey); ok == true {
 			return response.(map[string]interface{}), nil
 		}
 	}
 
-	resp, err := client.Do(req)
+	resp, err := Client.Client.Do(req)
 
 	if err != nil {
 		return nil, err
@@ -171,66 +195,66 @@ func (exchange *Exchange) get(url string, q query) (map[string]interface{}, erro
 
 	var result map[string]interface{}
 
-	err = json.NewDecoder(resp.Body).Decode(&result)
-
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	if err = json.Unmarshal(b, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal %q: %w", string(b), err)
 	}
 
 	success := result["success"]
 
 	if !success.(bool) {
-		return nil, ErrInvalidAPIResponse
+		return nil, fmt.Errorf("%q: %w", string(b), ErrInvalidAPIResponse)
 	}
 
 	if exchange.CacheEnabled {
-		cache.SetDefault(cacheKey, result)
+		Client.Cache.SetDefault(cacheKey, result)
 	}
 
 	return result, nil
 }
 
-func addToQuery(req *http.Request, key string, value string) {
-	q := req.URL.Query()          // Get a copy of the query values.
-	q.Add(key, value)             // Add a new value to the set.
-	req.URL.RawQuery = q.Encode() // Encode and assign back to the original query.
-}
-
 func processQuery(req *http.Request, q query) error {
+	Q := req.URL.Query()
+
+	Q.Add("access_key", Client.AccessKey)
+
 	if q.Base != "" {
 		if err := ValidateCode(q.Base); err != nil {
 			return err
 		}
-		addToQuery(req, "base", q.Base)
+		Q.Add("base", q.Base)
 	}
 
 	if q.From != "" {
 		if err := ValidateCode(q.From); err != nil {
 			return err
 		}
-		addToQuery(req, "from", q.From)
+		Q.Add("from", q.From)
 	}
 
 	if q.To != "" {
 		if err := ValidateCode(q.To); err != nil {
 			return err
 		}
-		addToQuery(req, "to", q.To)
+		Q.Add("to", q.To)
 	}
 
 	if q.Amount > 1 {
-		addToQuery(req, "amount", strconv.Itoa(q.Amount))
+		Q.Add("amount", strconv.Itoa(q.Amount))
 	}
 
 	if len(q.Symbols) != 0 {
-		addToQuery(req, "symbols", strings.Join(q.Symbols, ","))
+		Q.Add("symbols", strings.Join(q.Symbols, ","))
 	}
 
 	if q.Date != "" {
 		if err := ValidateDate(q.Date); err != nil {
 			return err
 		}
-		addToQuery(req, "date", q.Date)
+		Q.Add("date", q.Date)
 	}
 
 	if q.TimeFrame != [2]string{} {
@@ -242,9 +266,11 @@ func processQuery(req *http.Request, q query) error {
 		if err := ValidateTimeFrame(q.TimeFrame); err != nil {
 			return err
 		}
-		addToQuery(req, "start_date", string(q.TimeFrame[0]))
-		addToQuery(req, "end_date", string(q.TimeFrame[1]))
+		Q.Add("start_date", string(q.TimeFrame[0]))
+		Q.Add("end_date", string(q.TimeFrame[1]))
 	}
+
+	req.URL.RawQuery = Q.Encode() // Encode and assign back to the original query.
 
 	return nil
 }

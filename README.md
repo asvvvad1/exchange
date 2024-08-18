@@ -5,7 +5,6 @@ Go library for current & historical exchange rates, forex & crypto currency conv
 
 ## Features:
 - Currency conversion, historical & current exchange rates, timeseries and fluctuations
-- No authentication/token needed!
 - Select any base currency
 - 171 forex currency and 6000+ cryptocurrency!
 - Caching (optional, default) using [go-cache](https://github.com/patrickmn/go-cache)
@@ -25,6 +24,9 @@ import (
 )
 
 func main() {
+  // Set exchangerate.host ACCESS_KEY - either this way or via the EXCHANGERATE_ACCESS_KEY environment variable
+  exchange.Client.AccessKey = "my-access-key"
+  
 	// Create a new Exchange instance and set USD as the base currency for the exchange rates and conversion
 	ex := exchange.New("USD")
 	// convert 10 USD to EUR
